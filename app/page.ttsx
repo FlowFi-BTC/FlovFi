@@ -1,0 +1,519 @@
+import GradientASCII from '../components/GradientASCII';
+import type { ComponentType, CSSProperties } from "react";
+import { Inter, JetBrains_Mono } from "next/font/google";
+
+/* ========================================================================== */
+/*  Design tokens (measured from the reference screenshot, drawn at 2x)       */
+/*                                                                            */
+/*  Section ........ 1208px tall                                              */
+/*  Dark stair ..... 3 blocks, each 1020px tall, stepping UP by 48px          */
+/*                   A: y 132→1152 | B: y 84→1104 | C: y 36→1056              */
+/*                   steps sit at 50% ± 192px, corner radius 12px             */
+/*                   (convex on the outside, inverted fillet on the inside)   */
+/*  Cards .......... 192px wide, #27282b, L-shape (72×72 notch top-left)      */
+/*  Columns ........ left edges at 50% −72 / +144 / +360, gutter 24px         */
+/*  Page bg ........ #131416 | top beige #eae7e1 | bottom beige #f4f3f0       */
+/* ========================================================================== */
+
+const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
+
+const BG = "#131416";
+const CARD = "#27282b";
+
+/* -------------------------------------------------------------------------- */
+/*  Icons (approximate – swap for real logos)                                  */
+/* -------------------------------------------------------------------------- */
+
+const svgProps = { viewBox: "0 0 48 48", width: 48, height: 48, "aria-hidden": true } as const;
+
+const HermeticaIcon = () => (
+  <svg {...svgProps}>
+    <rect width="48" height="48" rx="9" fill="#d4d6db" />
+    <path d="M14 17l10-5 10 5v14l-10 5-10-5z" fill="none" stroke="#1d1e22" strokeWidth="2.4" strokeLinejoin="round" />
+    <path d="M14 17l10 5 10-5M24 22v14" fill="none" stroke="#1d1e22" strokeWidth="2.4" strokeLinejoin="round" />
+  </svg>
+);
+const ZestIcon = () => (
+  <svg {...svgProps}>
+    <path d="M2 36a22 22 0 0 1 44 0z" fill="#f4661b" />
+    <path d="M7 36a17 17 0 0 1 34 0z" fill="#ff8a3d" />
+    <circle cx="17" cy="30" r="2" fill="#2a1305" />
+    <circle cx="24" cy="25" r="2" fill="#2a1305" />
+    <circle cx="31" cy="30" r="2" fill="#2a1305" />
+  </svg>
+);
+const Stx20Icon = () => (
+  <svg {...svgProps}>
+    <rect width="48" height="48" rx="9" fill="#17181b" stroke="#303136" />
+    <path d="M24 10l11 6.5v13L24 36l-11-6.5v-13z" fill="#f2a31b" />
+    <path d="M24 15l7 4v8l-7 4-7-4v-8z" fill="#17181b" />
+    <path d="M24 19l3.5 2v4L24 27l-3.5-2v-4z" fill="#f2a31b" />
+  </svg>
+);
+const StackingDaoIcon = () => (
+  <svg {...svgProps}>
+    <circle cx="24" cy="24" r="24" fill="#143d2a" />
+    <text x="24" y="33" textAnchor="middle" fontSize="28" fontWeight="800" fill="#2ee08a" fontFamily="Inter, sans-serif">
+      S
+    </text>
+  </svg>
+);
+const BitflowIcon = () => (
+  <svg {...svgProps}>
+    <rect width="48" height="48" rx="9" fill="#2347ff" />
+    <text x="24" y="34" textAnchor="middle" fontSize="28" fontWeight="800" fill="#fff" fontFamily="Inter, sans-serif">
+      B
+    </text>
+  </svg>
+);
+const LeatherIcon = () => (
+  <svg {...svgProps}>
+    <rect width="48" height="48" rx="9" fill="#0f0e0d" />
+    <text x="24" y="35" textAnchor="middle" fontSize="34" fontStyle="italic" fill="#f5f1ea" fontFamily="Georgia, serif">
+      ℒ
+    </text>
+  </svg>
+);
+const OwlLinkIcon = () => (
+  <svg {...svgProps}>
+    <path d="M8 42V18C8 9 15 4 24 4s16 5 16 14v24l-8-6-8 6-8-6z" fill="#ff6a3d" />
+    <circle cx="18" cy="22" r="5.5" fill="#fff" />
+    <circle cx="30" cy="22" r="5.5" fill="#fff" />
+    <circle cx="18" cy="22" r="2.5" fill="#2b1208" />
+    <circle cx="30" cy="22" r="2.5" fill="#2b1208" />
+  </svg>
+);
+const AsignaIcon = () => (
+  <svg {...svgProps}>
+    <circle cx="24" cy="24" r="24" fill="#2b1708" />
+    <path d="M24 11l13 24H11z" fill="#ff7a18" />
+    <path d="M24 21l6 11H18z" fill="#2b1708" />
+  </svg>
+);
+const ArkadikoIcon = () => (
+  <svg {...svgProps}>
+    <rect width="48" height="48" rx="9" fill="#c96d12" />
+    <path d="M8 36l8-16 8 10 6-12 10 18z" fill="#2a1608" />
+  </svg>
+);
+const AlexIcon = () => (
+  <svg {...svgProps}>
+    <circle cx="24" cy="24" r="24" fill="#13123a" />
+    <g fill="none" stroke="#6b6dff" strokeWidth="1.4" opacity=".8">
+      <path d="M8 14c10 6 22 6 32 0M8 22c10 6 22 6 32 0M8 30c10 6 22 6 32 0" />
+      <path d="M14 8c-4 10-4 22 0 32M24 6c-4 12-4 24 0 36M34 8c-4 10-4 22 0 32" />
+    </g>
+  </svg>
+);
+const XverseIcon = () => (
+  <svg {...svgProps}>
+    <rect width="48" height="48" rx="9" fill="#fff" />
+    <path d="M15 15l18 18M33 15L15 33" stroke="#111" strokeWidth="5" strokeLinecap="round" />
+  </svg>
+);
+const RyderIcon = () => (
+  <svg {...svgProps}>
+    <rect width="48" height="48" rx="9" fill="#fff" />
+    <path d="M14 14h13a7 7 0 0 1 0 14h-3l9 8h-7l-8-8v8h-4zM18 18v6h9a3 3 0 0 0 0-6z" fill="#111" fillRule="evenodd" />
+  </svg>
+);
+const VelarIcon = () => (
+  <svg {...svgProps}>
+    <rect width="48" height="48" rx="9" fill="#e0407f" />
+    <path d="M12 36L24 12l12 24z" fill="#ff8a3d" />
+    <path d="M24 36l12-24 6 24z" fill="#7a3df0" />
+  </svg>
+);
+
+/* -------------------------------------------------------------------------- */
+/*  Data – description lines are fixed so the wraps match the reference        */
+/* -------------------------------------------------------------------------- */
+
+type App = { name: string; lines: string[]; Icon: ComponentType };
+
+const COL_1: App[] = [
+  { name: "Hermetica", lines: ["A Bitcoin-backed,", "yield-bearing", "synthetic dollar", "protocol."], Icon: HermeticaIcon },
+  { name: "Zest Protocol", lines: ["Zest Protocol is a", "lending protocol, built", "for Bitcoin."], Icon: ZestIcon },
+  {
+    name: "STX20",
+    lines: ["The STX20 protocol", "introduces a novel", "approach to creating", "and sharing digital", "artifacts on the", "Stacks blockchain."],
+    Icon: Stx20Icon,
+  },
+  { name: "Stacking DAO", lines: ["Liquidity for stacked", "tokens on Stacks"], Icon: StackingDaoIcon },
+];
+
+const COL_2: App[] = [
+  { name: "Bitflow", lines: ["The decentralized", "exchange for", "Bitcoiners"], Icon: BitflowIcon },
+  {
+    name: "Leather Wallet",
+    lines: ["Leather is a wallet for", "Bitcoin and Stacks,", "designed for security,", "clarity, and growth."],
+    Icon: LeatherIcon,
+  },
+  { name: "Owl Link", lines: ["Decentralized bio", "links using .btc", "domains."], Icon: OwlLinkIcon },
+  { name: "Asigna", lines: ["Multisig Wallet for", "Bitcoin, Ordinals,", "BRC20s, and Stacks"], Icon: AsignaIcon },
+  { name: "Arkadiko", lines: ["A decentralized", "stablecoin protocol", "built on Bitcoin."], Icon: ArkadikoIcon },
+];
+
+const COL_3: App[] = [
+  {
+    name: "Alex",
+    lines: [
+      "An autonomous",
+      "Bitcoin liquidity",
+      "protocol where users",
+      "can participate as",
+      "liquidity providers,",
+      "borrowers, or",
+      "liquidators.",
+    ],
+    Icon: AlexIcon,
+  },
+  {
+    name: "Xverse",
+    lines: [
+      "The Bitcoin wallet for",
+      "everyone. Connect to",
+      "Stacks apps and",
+      "stacking pool with",
+      "Ledger support. iOS,",
+      "Android and Chrome.",
+    ],
+    Icon: XverseIcon,
+  },
+  {
+    name: "Ryder",
+    lines: ["The world's first social", "wallet bringing real-", "life social interaction", "to crypto."],
+    Icon: RyderIcon,
+  },
+  { name: "Velar", lines: ["Bitcoin-native DeFi:", "swap, lend and trade", "perps on Stacks."], Icon: VelarIcon },
+];
+
+/* -------------------------------------------------------------------------- */
+/*  Feature list (left)                                                        */
+/* -------------------------------------------------------------------------- */
+
+const G = "#84858a";
+
+const FeatBitcoin = () => (
+  <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden>
+    <g fill="none" stroke={G} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" transform="rotate(8 16 16)">
+      <path d="M12 9.5h5.2a3 3 0 0 1 0 6H12m0 0h5.8a3.2 3.2 0 0 1 0 6.4H12V9.5M14.5 7v2.5M14.5 21.9v2.6M18 7v2.5M18 21.9v2.6" />
+    </g>
+  </svg>
+);
+const FeatShield = () => (
+  <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden>
+    <path d="M16 7l7 2.6v5.6c0 4.4-3 7.4-7 9.2-4-1.8-7-4.8-7-9.2V9.6z" fill={G} />
+    <path d="M12.8 15.5l2.4 2.4 4-4.4" fill="none" stroke="#27282c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const FeatTriangle = () => (
+  <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden>
+    <path d="M7 25L25 10v15z" fill={G} />
+  </svg>
+);
+
+const FEATURES: { Icon: ComponentType; title: string; lines: string[] }[] = [
+  {
+    Icon: FeatBitcoin,
+    title: "SECURED BY BITCOIN",
+    lines: ["Transactions on Stacks will be as", "irreversible as Bitcoin's."],
+  },
+  {
+    Icon: FeatShield,
+    title: "Bitcoin network effects",
+    lines: ["Build experiences for a massive,", "largely untapped audience."],
+  },
+  {
+    Icon: FeatTriangle,
+    title: "SMART CONTRACTS WITH CLARITY",
+    lines: ["A security-first programming language", "with visibility on Bitcoin state."],
+  },
+  {
+    Icon: FeatTriangle,
+    title: "Developer tools & Community",
+    lines: ["Enjoy tools, tutorials, and a vibrant", "community to aid you build."],
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/*  Card – L-shaped (72×72 notch top-left) with an inverted fillet             */
+/* -------------------------------------------------------------------------- */
+
+function Card({ app }: { app: App }) {
+  const { name, lines, Icon } = app;
+  return (
+    <li className="relative w-[192px] shrink-0 list-none">
+      {/* tab (right, rises above the body) */}
+      <div
+        className="absolute left-[72px] right-0 top-0 h-[84px] rounded-tl-[10px] rounded-tr-[12px]"
+        style={{ background: CARD }}
+      />
+      {/* inverted corner where tab meets body */}
+      <div
+        className="absolute left-[62px] top-[62px] h-[10px] w-[10px]"
+        style={{ background: `radial-gradient(circle at 0 0, transparent 9.5px, ${CARD} 10px)` }}
+      />
+      {/* body */}
+      <div className="relative mt-[72px] rounded-[12px] px-[22px] pb-[23px] pt-[26px]" style={{ background: CARD }}>
+        <h3 className="text-[16px] font-bold uppercase leading-[20px] tracking-[-0.05em] text-[#f6f6f5]">{name}</h3>
+        <p className="mt-[11px] text-[13px] font-semibold leading-[21.5px] text-[#82878a]">
+          {lines.map((l) => (
+            <span key={l} className="block whitespace-nowrap">
+              {l}
+            </span>
+          ))}
+        </p>
+      </div>
+      {/* icon sits in the notch */}
+      <div className="absolute left-[12px] top-[12px] h-[48px] w-[48px]">
+        <Icon />
+      </div>
+      {/* star */}
+      <svg className="absolute right-[17px] top-[17px]" viewBox="0 0 10 10" width="10" height="10" aria-hidden>
+        <path d="M5 .6l1.3 2.9 3.1.3-2.3 2.1.7 3.1L5 7.4 2.2 9l.7-3.1L.6 3.8l3.1-.3z" fill="#55585a" />
+      </svg>
+    </li>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Auto-scrolling column                                                      */
+/* -------------------------------------------------------------------------- */
+
+const COPIES = 4; // 25% of the track height === exactly one list → seamless loop
+
+function Column({
+  apps,
+  dir,
+  duration,
+  offset,
+  gap,
+  className,
+}: {
+  apps: App[];
+  dir: "up" | "down";
+  duration: number;
+  offset: number; // y (px) of the first card in the first frame
+  gap: number;
+  className: string;
+}) {
+  return (
+    <div className={`relative shrink-0 overflow-hidden ${className}`}>
+      <div
+        className={`col-track ${dir === "up" ? "col-up" : "col-down"}`}
+        style={{ "--dur": `${duration}s`, "--o": `${offset}px` } as CSSProperties}
+      >
+        {Array.from({ length: COPIES }).map((_, i) => (
+          <ul
+            key={i}
+            aria-hidden={i === 0 ? undefined : true}
+            className="m-0 flex flex-col p-0"
+            style={{ rowGap: gap, paddingBottom: gap }}
+          >
+            {apps.map((app) => (
+              <Card key={app.name} app={app} />
+            ))}
+          </ul>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                       */
+/* -------------------------------------------------------------------------- */
+
+export default function Page() {
+  return (
+    <main className={`${sans.variable} ${mono.variable} font-[family-name:var(--font-sans)] bg-[#111111]`}>
+      <style>{`
+        .col-track { will-change: transform; transform: translateY(var(--o, 0px)); }
+        .col-up   { animation: col-up   var(--dur, 40s) linear infinite; }
+        .col-down { animation: col-down var(--dur, 40s) linear infinite; }
+        .col-track:hover { animation-play-state: paused; }
+
+        /* 4 identical copies → 25% of the track = one full list */
+        @keyframes col-up {
+          from { transform: translateY(calc(-25% + var(--o, 0px))); }
+          to   { transform: translateY(calc(-50% + var(--o, 0px))); }
+        }
+        @keyframes col-down {
+          from { transform: translateY(calc(-50% + var(--o, 0px))); }
+          to   { transform: translateY(calc(-25% + var(--o, 0px))); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .col-up, .col-down { animation: none; }
+        }
+
+        /* mobile / tablet: simple top + bottom fade */
+        .fade-mask {
+          -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 100px, #000 calc(100% - 150px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 100px, #000 calc(100% - 150px), transparent 100%);
+        }
+
+        /* desktop: columns are clipped to the dark stair and share ONE global fade (measured) */
+        @media (min-width: 1280px) {
+          .fade-mask {
+            clip-path: polygon(
+              0 132px,
+              calc(50% - 192px) 132px, calc(50% - 192px) 84px,
+              calc(50% + 192px) 84px,  calc(50% + 192px) 36px,
+              100% 36px, 100% 1056px,
+              calc(50% + 192px) 1056px, calc(50% + 192px) 1104px,
+              calc(50% - 192px) 1104px, calc(50% - 192px) 1152px,
+              0 1152px
+            );
+            -webkit-mask-image: linear-gradient(to bottom,
+              transparent 0, transparent 52px, #000 160px,
+              #000 988px, rgba(0,0,0,.85) 1000px, rgba(0,0,0,.65) 1012px, rgba(0,0,0,.5) 1024px,
+              rgba(0,0,0,.4) 1036px, rgba(0,0,0,.25) 1048px, rgba(0,0,0,.1) 1060px,
+              rgba(0,0,0,.05) 1084px, transparent 1100px);
+            mask-image: linear-gradient(to bottom,
+              transparent 0, transparent 52px, #000 160px,
+              #000 988px, rgba(0,0,0,.85) 1000px, rgba(0,0,0,.65) 1012px, rgba(0,0,0,.5) 1024px,
+              rgba(0,0,0,.4) 1036px, rgba(0,0,0,.25) 1048px, rgba(0,0,0,.1) 1060px,
+              rgba(0,0,0,.05) 1084px, transparent 1100px);
+          }
+        }
+      `}</style>
+
+
+
+
+
+      <div style={{ width: '100%', height: '600px', position: 'relative' }}>
+        <GradientASCII
+          colors={["#e94b20", "#fff6f2", "#ffc2ad", "#ff8a65"]}
+          shape="horizon"
+          characters=" .·•●"
+          cellSize={18}
+          density={0.8}
+          glyphOpacity={0.85}
+          glow={0.2}
+          depthOfField={0}
+          flicker={0.2}
+          softness={0.5}
+          scale={1}
+          flow={0.5}
+          speed={1}
+          gradientOpacity={0.9}
+          grain={0.08}
+          variation={0}
+          mouseInteraction
+          scrambleRadius={0.1}
+          clickEffect="wave"
+          intro
+          lightMode={false}
+        />
+      </div>
+      <section className="relative isolate overflow-hidden bg-[#131416] xl:h-[1208px] xl:bg-[#eae7e1]">
+        {/* ------------------------------------------------------------------ */}
+        {/*  Stepped dark background with inverted corners (desktop)            */}
+        {/* ------------------------------------------------------------------ */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 hidden xl:block">
+          {/* lighter beige below the section midpoint (hidden behind the dark blocks) */}
+          <div className="absolute inset-x-0 bottom-0 top-1/2 bg-[#f4f3f0]" />
+
+          {/* A */}
+          <div className="absolute left-0 right-[calc(50%+192px)] top-[132px] h-[1020px] rounded-br-[12px] bg-[#131416]" />
+          {/* B */}
+          <div className="absolute left-[calc(50%-192px)] top-[84px] h-[1020px] w-[384px] rounded-br-[12px] rounded-tl-[12px] bg-[#131416]" />
+          {/* C */}
+          <div className="absolute left-[calc(50%+192px)] right-0 top-[36px] h-[1020px] rounded-tl-[12px] bg-[#131416]" />
+
+          {/* inverted fillets (r = 12) */}
+          <div
+            className="absolute left-[calc(50%-204px)] top-[120px] h-[12px] w-[12px]"
+            style={{ background: `radial-gradient(circle at 0 0, transparent 11.5px, ${BG} 12px)` }}
+          />
+          <div
+            className="absolute left-[calc(50%+180px)] top-[72px] h-[12px] w-[12px]"
+            style={{ background: `radial-gradient(circle at 0 0, transparent 11.5px, ${BG} 12px)` }}
+          />
+          <div
+            className="absolute left-[calc(50%-192px)] top-[1104px] h-[12px] w-[12px]"
+            style={{ background: `radial-gradient(circle at 100% 100%, transparent 11.5px, ${BG} 12px)` }}
+          />
+          <div
+            className="absolute left-[calc(50%+192px)] top-[1056px] h-[12px] w-[12px]"
+            style={{ background: `radial-gradient(circle at 100% 100%, transparent 11.5px, ${BG} 12px)` }}
+          />
+        </div>
+
+        {/* ------------------------------------------------------------------ */}
+        {/*  Content                                                            */}
+        {/* ------------------------------------------------------------------ */}
+        <div className="relative flex flex-col items-center gap-14 px-6 py-20 xl:static xl:block xl:p-0">
+          {/* ---- left: copy ---- */}
+          <div className="w-full max-w-[380px] xl:absolute xl:left-[calc(50%-552px)] xl:top-[310px] xl:z-10 xl:w-[380px] xl:max-w-none">
+            <span className="inline-flex h-[32px] items-center rounded-full border border-[#3e4043] pl-[9px] pr-[8px] font-[family-name:var(--font-mono)] text-[11.2px] font-bold uppercase tracking-[0.125em] text-[#a8a39e]">
+              Developers
+            </span>
+
+            <h2 className="mt-[16px] text-[30px] font-medium leading-[38px] tracking-[-0.067em] text-white xl:text-[36px] xl:leading-[44px]">
+              Build on Bitcoin, the most <br className="hidden xl:block" />
+              secure base layer
+            </h2>
+
+            <ul className="mt-[30px] p-0">
+              {FEATURES.map(({ Icon, title, lines }) => (
+                <li key={title} className="relative m-0 flex h-[100.67px] list-none items-start gap-[16px] max-xl:mb-6 max-xl:h-auto">
+                  <div className="flex h-[32px] w-[32px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#27282c]">
+                    <Icon />
+                  </div>
+                  <div className="-mt-[4.4px] min-w-0 font-[family-name:var(--font-mono)]">
+                    <p className="text-[12.6px] font-bold leading-[16px] text-[#f8f8f8]">{title}</p>
+                    <p className="mt-[13px] text-[14px] leading-[20.5px] text-[#82878a]">
+                      {lines.map((l) => (
+                        <span key={l} className="block xl:whitespace-nowrap">
+                          {l}
+                        </span>
+                      ))}
+                    </p>
+                  </div>
+                  <span
+                    aria-hidden
+                    className="absolute -top-[5px] left-[356px] hidden w-[12px] text-center font-[family-name:var(--font-mono)] text-[13px] leading-[16px] text-[#505156] xl:block"
+                  >
+                    +
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* ---- right: three scrolling columns (up / down / up) ---- */}
+          <div className="fade-mask relative flex h-[640px] w-full justify-center gap-[24px] overflow-hidden xl:absolute xl:inset-0 xl:z-10 xl:block xl:h-auto xl:w-auto xl:overflow-visible">
+            <Column
+              apps={COL_1}
+              dir="up"
+              duration={44}
+              offset={88}
+              gap={26}
+              className="h-full w-[192px] xl:absolute xl:left-[calc(50%-72px)] xl:top-0 xl:h-[1208px]"
+            />
+            <Column
+              apps={COL_2}
+              dir="down"
+              duration={52}
+              offset={2}
+              gap={30}
+              className="h-full w-[192px] xl:absolute xl:left-[calc(50%+144px)] xl:top-0 xl:h-[1208px]"
+            />
+            <Column
+              apps={COL_3}
+              dir="up"
+              duration={38}
+              offset={56}
+              gap={28}
+              className="h-full w-[192px] xl:absolute xl:left-[calc(50%+360px)] xl:top-0 xl:h-[1208px]"
+            />
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
